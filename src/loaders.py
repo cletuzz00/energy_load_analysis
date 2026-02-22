@@ -6,7 +6,7 @@ from typing import Optional
 
 import pandas as pd
 
-from .config import REGIONS, METADATA_KEY_COLUMNS, PROJECT_ROOT
+from .config import REGIONS, METADATA_KEY_COLUMNS, PROJECT_ROOT, ALL_CIRCUIT_COLUMNS, NON_POWER_COLUMNS
 
 
 def load_15min_data(
@@ -27,6 +27,11 @@ def load_15min_data(
         raise FileNotFoundError(str(path))
 
     df = pd.read_csv(path, low_memory=False)
+    # Keep only known columns (id, time, voltage, and all circuit columns from config)
+    known = set(NON_POWER_COLUMNS) | set(ALL_CIRCUIT_COLUMNS)
+    cols = [c for c in df.columns if c in known]
+    if cols:
+        df = df[cols]
     df["local_15min"] = pd.to_datetime(df["local_15min"], utc=True)
 
     if dataid_list is not None:
