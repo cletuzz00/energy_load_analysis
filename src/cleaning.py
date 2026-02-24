@@ -14,6 +14,54 @@ from .config import (
     WHOLE_HOME_COLUMN,
 )
 
+# Season labels: 1=winter, 2=spring, 3=summer, 4=fall (Northern Hemisphere)
+_SEASON_LABELS = {1: "winter", 2: "spring", 3: "summer", 4: "fall"}
+
+
+def get_season(dates, label: bool = False):
+    """
+    Return season (1-4 or 'winter'/'spring'/'summer'/'fall') from datetime(s).
+    Accepts a Series or a single timestamp. Same convention as add_calendar_features.
+    """
+    scalar = not hasattr(dates, "dt")
+    if scalar:
+        dates = pd.Series([pd.Timestamp(dates)])
+    t = pd.to_datetime(dates)
+    month = t.dt.month
+    season_num = ((month % 12) + 3) // 3
+    if label:
+        out = season_num.map(_SEASON_LABELS)
+    else:
+        out = season_num
+    if scalar:
+        return out.iloc[0]
+    return out
+
+
+def is_weekend(dates):
+    """Return True for Saturday/Sunday, False otherwise. Accepts Series or scalar datetime."""
+    scalar = not hasattr(dates, "dt")
+    if scalar:
+        dates = pd.Series([pd.Timestamp(dates)])
+    t = pd.to_datetime(dates)
+    out = t.dt.dayofweek.isin([5, 6])
+    if scalar:
+        return out.iloc[0]
+    return out
+
+
+def get_day_type(dates):
+    """Return 'weekend' or 'weekday'. Accepts Series or scalar datetime."""
+    scalar = not hasattr(dates, "dt")
+    if scalar:
+        dates = pd.Series([pd.Timestamp(dates)])
+    t = pd.to_datetime(dates)
+    out = np.where(t.dt.dayofweek.isin([5, 6]), "weekend", "weekday")
+    out = pd.Series(out, index=dates.index)
+    if scalar:
+        return out.iloc[0]
+    return out
+
 
 def get_power_columns(df: pd.DataFrame) -> list:
     """Return list of circuit columns that hold real power (kW), in config order."""
